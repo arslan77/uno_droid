@@ -1,0 +1,2 @@
+include ':app', ':PhysicaloidLibrary'
+rootProject.name='Codi Uploader'
