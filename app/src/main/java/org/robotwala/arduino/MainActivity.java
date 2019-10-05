@@ -8,6 +8,7 @@ import com.google.android.material.snackbar.Snackbar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
+import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -19,8 +20,11 @@ import com.physicaloid.lib.programmer.avr.UploadErrors;
 import com.physicaloid.lib.usb.driver.uart.ReadLisener;
 import com.physicaloid.lib.usb.driver.uart.UartConfig;
 
+import java.io.IOException;
+
 
 public class MainActivity extends AppCompatActivity {
+    Physicaloid mPhysicaloid;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,18 +32,64 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        mPhysicaloid = new Physicaloid(this);
+
 
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) {
+            public void onClick(final View view) {
 
+                try {
+                    mPhysicaloid.upload(Boards.POCKETDUINO, getResources().getAssets().open("SerialEchoback.PocketDuino.hex"), new UploadCallBack() {
+                        @Override
+                        public void onPreUpload() {
+                            Snackbar.make(view, "Start", Snackbar.LENGTH_LONG)
+                                    .setAction("Action", null).show();
+                        }
 
+                        @Override
+                        public void onUploading(int value) {
+                            Snackbar.make(view, "Uploading", Snackbar.LENGTH_LONG)
+                                    .setAction("Action", null).show();
+                        }
+
+                        @Override
+                        public void onPostUpload(boolean success) {
+                            if(success) {
+
+                                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+                                        .setAction("Action", null).show();
+                            } else {
+                                Snackbar.make(view, "Upload failed", Snackbar.LENGTH_LONG)
+                                        .setAction("Action", null).show();
+                            }
+                        }
+
+                        @Override
+                        public void onCancel() {
+
+                            Snackbar.make(view, "Canceled", Snackbar.LENGTH_LONG)
+                                    .setAction("Action", null).show();
+                        }
+
+                        @Override
+                        public void onError(UploadErrors err) {
+                            Snackbar.make(view, "Error Occured", Snackbar.LENGTH_LONG)
+                                    .setAction("Action", null).show();
+                        }
+                    });
+                } catch (RuntimeException e) {
+//                    Log.e(TAG, e.toString());
+                } catch (IOException e) {
+//                    Log.e(TAG, e.toString());
+                }
                 Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
             }
         });
     }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

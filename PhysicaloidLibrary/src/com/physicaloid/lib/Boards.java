@@ -45,7 +45,7 @@ public enum Boards {
     ARDUINO_NG_8                (0, "ng08",ChipTypes.M8,        UploadProtocols.STK500,   19200, ComProtocols.UART, "Arduino NG or older ATmega8"),
 
     BALANDUINO                  (1, "bala",ChipTypes.M1284P,    UploadProtocols.STK500,  115200, ComProtocols.UART, "Balanduino"),
-    POCKETDUINO                 (1, "podu",ChipTypes.M328P,     UploadProtocols.STK500,   57600, ComProtocols.UART, "PocketDuino"),
+    POCKETDUINO                 (1, "podu",ChipTypes.M328P,     UploadProtocols.STK500,   115200, ComProtocols.UART, "PocketDuino"),
 
     // mbed Series
 //    MBED_LPC1768                (0, "mbd1",ChipTypes.MBED_LPC1768,      UploadProtocols.USBMEM,   0, ComProtocols.UART, "mbed LPC1768"),
