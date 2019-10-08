@@ -1,5 +1,8 @@
 package org.robotwala.arduino;
 
+import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -8,10 +11,12 @@ import com.google.android.material.snackbar.Snackbar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
+import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import com.physicaloid.lib.Boards;
 import com.physicaloid.lib.Physicaloid;
@@ -20,76 +25,87 @@ import com.physicaloid.lib.programmer.avr.UploadErrors;
 import com.physicaloid.lib.usb.driver.uart.ReadLisener;
 import com.physicaloid.lib.usb.driver.uart.UartConfig;
 
+import org.robotwala.arduino.services.UploadService;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
+import java.util.Arrays;
 
 
 public class MainActivity extends AppCompatActivity {
+    private static final String TAG = MainActivity.class.getSimpleName();
     Physicaloid mPhysicaloid;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+//        Bundle extras = getIntent().getExtras();
+        Uri uri = getIntent().getData();
+        if (uri != null){
+            String hex = uri.getQueryParameter("hex");
+//            String name = extras.getString("hex");
+
+            if (hex!=null)
+            {
+
+//                File file = new File(this.getFilesDir(), "sample.hex");
+                String filename = "sample.hex";
+                byte[] fileContents = Base64.decode(hex, Base64.DEFAULT);
+                FileOutputStream outputStream;
+
+                try {
+                    outputStream = openFileOutput(filename, MODE_PRIVATE);
+                    outputStream.write(fileContents);
+                    outputStream.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                Toast.makeText(this, Arrays.toString(fileContents), Toast.LENGTH_LONG).show();
+
+                //do whatever you have to
+                //...
+            }
+        }else{
+            //no extras, get over it!!
+        }
+
+
         setContentView(R.layout.activity_main);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         mPhysicaloid = new Physicaloid(this);
 
 
-        FloatingActionButton fab = findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(final View view) {
-
-                try {
-                    mPhysicaloid.upload(Boards.POCKETDUINO, getResources().getAssets().open("SerialEchoback.PocketDuino.hex"), new UploadCallBack() {
-                        @Override
-                        public void onPreUpload() {
-                            Snackbar.make(view, "Start", Snackbar.LENGTH_LONG)
-                                    .setAction("Action", null).show();
-                        }
-
-                        @Override
-                        public void onUploading(int value) {
-                            Snackbar.make(view, "Uploading", Snackbar.LENGTH_LONG)
-                                    .setAction("Action", null).show();
-                        }
-
-                        @Override
-                        public void onPostUpload(boolean success) {
-                            if(success) {
-
-                                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                                        .setAction("Action", null).show();
-                            } else {
-                                Snackbar.make(view, "Upload failed", Snackbar.LENGTH_LONG)
-                                        .setAction("Action", null).show();
-                            }
-                        }
-
-                        @Override
-                        public void onCancel() {
-
-                            Snackbar.make(view, "Canceled", Snackbar.LENGTH_LONG)
-                                    .setAction("Action", null).show();
-                        }
-
-                        @Override
-                        public void onError(UploadErrors err) {
-                            Snackbar.make(view, "Error Occured", Snackbar.LENGTH_LONG)
-                                    .setAction("Action", null).show();
-                        }
-                    });
-                } catch (RuntimeException e) {
-//                    Log.e(TAG, e.toString());
-                } catch (IOException e) {
-//                    Log.e(TAG, e.toString());
-                }
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
     }
 
+    public void onBtnClick(final View view){
+        File directory = this.getFilesDir();
+        File file = new File(directory, "sample.hex");
+        StringBuilder text = new StringBuilder();
+
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(file));
+            String line;
+
+            while ((line = br.readLine()) != null) {
+                text.append(line);
+                text.append('\n');
+            }
+            br.close();
+        }
+        catch (IOException e) {
+            //You'll need to add proper error handling here
+        }
+        stopService(new Intent(this, UploadService.class));
+    }
+    public void onUploadClick(final View view){
+        startService(new Intent(this, UploadService.class));
+
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
