@@ -41,6 +41,8 @@
         <service
             android:name=".services.UploadService"
             android:enabled="true" />
+
     </application>
+<!--    <uses-permission android:name="android.permission.MANAGE_USB" />-->
 
 </manifest>

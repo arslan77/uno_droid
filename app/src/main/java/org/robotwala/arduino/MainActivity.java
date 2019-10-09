@@ -1,58 +1,62 @@
 package org.robotwala.arduino;
 
 import android.content.Context;
-import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.snackbar.Snackbar;
-
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
-
 import android.util.Base64;
-import android.util.Log;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Toast;
+import android.view.View;
+import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.TextView;
 
 import com.physicaloid.lib.Boards;
 import com.physicaloid.lib.Physicaloid;
-import com.physicaloid.lib.Physicaloid.UploadCallBack;
 import com.physicaloid.lib.programmer.avr.UploadErrors;
-import com.physicaloid.lib.usb.driver.uart.ReadLisener;
-import com.physicaloid.lib.usb.driver.uart.UartConfig;
 
-import org.robotwala.arduino.services.UploadService;
-
-import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.Arrays;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
     Physicaloid mPhysicaloid;
+    TextView logsText;
+
+    public void addLog(final String message) {
+        try {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    String newMessage = logsText.getText() + "\n" + message;
+                    logsText.setText(newMessage);
+                }
+            });
+        } catch (Exception e) {
+            int i = 0;
+
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-//        Bundle extras = getIntent().getExtras();
+
+        setContentView(R.layout.activity_main);
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        logsText = (TextView) findViewById(R.id.logs);
+
+        setSupportActionBar(toolbar);
+        mPhysicaloid = new Physicaloid(this);
         Uri uri = getIntent().getData();
-        if (uri != null){
+        if (uri != null) {
             String hex = uri.getQueryParameter("hex");
-//            String name = extras.getString("hex");
+            if (hex != null) {
 
-            if (hex!=null)
-            {
-
-//                File file = new File(this.getFilesDir(), "sample.hex");
                 String filename = "sample.hex";
                 byte[] fileContents = Base64.decode(hex, Base64.DEFAULT);
                 FileOutputStream outputStream;
@@ -61,49 +65,57 @@ public class MainActivity extends AppCompatActivity {
                     outputStream = openFileOutput(filename, MODE_PRIVATE);
                     outputStream.write(fileContents);
                     outputStream.close();
+
+                    ImageButton btn = (ImageButton) findViewById(R.id.uploadBtn);
+                    onUploadClick(btn);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                Toast.makeText(this, Arrays.toString(fileContents), Toast.LENGTH_LONG).show();
 
-                //do whatever you have to
-                //...
             }
-        }else{
-            //no extras, get over it!!
         }
-
-
-        setContentView(R.layout.activity_main);
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-        mPhysicaloid = new Physicaloid(this);
-
 
     }
 
-    public void onBtnClick(final View view){
-        File directory = this.getFilesDir();
-        File file = new File(directory, "sample.hex");
-        StringBuilder text = new StringBuilder();
 
-        try {
-            BufferedReader br = new BufferedReader(new FileReader(file));
-            String line;
-
-            while ((line = br.readLine()) != null) {
-                text.append(line);
-                text.append('\n');
+    public void onUploadClick(final View view) {
+//        final Context context = this;
+        mPhysicaloid.upload(Boards.ARDUINO_UNO, this.getFilesDir() + "/sample.hex", new Physicaloid.UploadCallBack() {
+            @Override
+            public void onPreUpload() {
+                addLog("Start");
             }
-            br.close();
-        }
-        catch (IOException e) {
-            //You'll need to add proper error handling here
-        }
-        stopService(new Intent(this, UploadService.class));
-    }
-    public void onUploadClick(final View view){
-        startService(new Intent(this, UploadService.class));
+
+            @Override
+            public void onUploading(int value) {
+                addLog("Uploading - " + value + "%");
+            }
+
+            @Override
+            public void onPostUpload(boolean success) {
+                if (success) {
+                    addLog("Success");
+                    android.os.Process.killProcess(android.os.Process.myPid());
+                    System.exit(1);
+
+                } else {
+                    addLog("Failed");
+                    addLog("Please Try Again");
+                }
+            }
+
+            @Override
+            public void onCancel() {
+                addLog("Canceled");
+            }
+
+            @Override
+            public void onError(UploadErrors err) {
+
+                addLog("Error Occured - " + err.toString());
+                addLog("Please make sure wires are connected properly and try again.");
+            }
+        });
 
     }
 

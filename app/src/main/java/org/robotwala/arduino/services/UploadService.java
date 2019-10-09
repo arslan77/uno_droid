@@ -35,42 +35,7 @@ public class UploadService extends Service {
 
         // The service is starting, due to a call to startService()
         try {
-            mPhysicaloid.upload(Boards.ARDUINO_UNO, this.getFilesDir()+"/sample.hex", new Physicaloid.UploadCallBack() {
-                @Override
-                public void onPreUpload() {
-                    Toast.makeText(getApplicationContext(), "Start", Toast.LENGTH_LONG).show();
 
-                }
-
-                @Override
-                public void onUploading(int value) {
-                    Toast.makeText(getApplicationContext(), "Uploading : "+value, Toast.LENGTH_LONG).show();
-                }
-
-                @Override
-                public void onPostUpload(boolean success) {
-                    if(success) {
-                        Toast.makeText(getApplicationContext(), "Success ", Toast.LENGTH_LONG).show();
-
-                    } else {
-                        Toast.makeText(getApplicationContext(), "Upload Failed ", Toast.LENGTH_LONG).show();
-
-                    }
-                }
-
-                @Override
-                public void onCancel() {
-
-                    Toast.makeText(getApplicationContext(), "Canceled ", Toast.LENGTH_LONG).show();
-
-                }
-
-                @Override
-                public void onError(UploadErrors err) {
-                    Toast.makeText(getApplicationContext(), "Error :"+err.toString(), Toast.LENGTH_LONG).show();
-
-                }
-            });
         } catch (RuntimeException e) {
             Log.e(TAG, e.toString());
         }
